@@ -452,6 +452,7 @@ footer.sticky-bottom {
       display: inline-block;
       padding: 1rem 0.5rem;
       color: var(--global-text-color-light);
+      
     }
   }
 }
@@ -477,6 +478,7 @@ footer.sticky-bottom {
       color: var(--global-text-color-light);
       font-size: 0.875rem;
       margin-bottom: 0;
+      
     }
 
     .post-tags {
@@ -548,7 +550,9 @@ footer.sticky-bottom {
 
   .card {
     img {
-      width: 100%;
+      width: 250px;
+      height: 140px;
+      object-fit: cover;
     }
   }
 
@@ -797,6 +801,7 @@ html.transition *:after {
     color: var(--global-text-color-light);
     font-size: 0.875rem;
     margin-bottom: 0;
+    
   }
 
   .post-tags {
@@ -822,6 +827,7 @@ html.transition *:after {
 
       p {
         margin-bottom: 0;
+        
       }
     }
   }
@@ -1002,10 +1008,12 @@ nav[data-toggle="toc"] {
 
     p {
       color: var(--global-tip-block-text);
+      
     }
 
     h1, h2, h3, h4, h5, h6 {
       color: var(--global-tip-block-title);
+      
     }
   }
 
