@@ -17,7 +17,7 @@ selected_papers: true # includes a list of papers marked as "selected={true}"
 social: true  # includes social icons at the bottom of the page
 ---
 
-Hey there!👋 I’m currently on an exciting journey as a Ph.D. candidate at Aalto University, where I’m diving deep into the world of robotic manipulation and magnetic navigation systems, all with a focus on making a difference in robotics in medical applications.
+Hey there!👋 I’m currently on an exciting journey as a Ph.D. candidate at Aalto University, working at the Intelligent Robotics research group under the supervision of Prof. Ville Kyrki. Here, I’m diving deep into the world of robotic manipulation and magnetic navigation systems, all with a focus on making a difference in robotics in medical applications.
 
 You can think of me as a bit of a tech enthusiast, with a knack for languages like Python, Matlab/Simulink, and C++. I love bringing intelligent systems to life and have had some awesome experiences designing and developing autonomous solutions.
 
