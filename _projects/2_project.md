@@ -34,3 +34,14 @@ A deep understanding of cell uptake mechanism of nanoparticles is extremely impo
 <div class="caption">
     Robotic Electromagnetic Needles for single micro/nano particle manipulation
 </div>
+
+
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        {% include video.html path="assets/video/cell.mp4" class="img-fluid rounded z-depth-1" controls=true autoplay=true  %}
+    </div>
+</div>
+<div class="caption">
+    Cellular binding force measurement
+</div>
