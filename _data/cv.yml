@@ -44,9 +44,20 @@
 - title: Experience
   type: time_table
   contents:
+    - title: Quantitative Risk Analyst
+      institution: Nordea, Helsinki, Finland
+      year: 2024 - now
+      description:
+        - To make sure that adequate model frameworks are in place, risks are identified, well understood, monitored, controlled, mitigated, and reported.
+        - title: Skills
+          contents:
+            - Programming & Data Analysis
+            - Risk Model Methodology
+
+
     - title: Research Assistant
       institution: Aalto University, Espoo, Finland
-      year: 2019 - now
+      year: 2019 - 2024
       description:
         - Focused on magnetic manipulation for medical applications, ranging from macro to nanoscale. I developed an electromagnetic needle system for cellular measurements and manipulation. Building on this, I implemented an optimal controller for magnetic navigation in endoscope pills. 
         - title: Teaching
