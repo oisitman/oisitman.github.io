@@ -117,9 +117,8 @@ related_publications: isitman2024trajectory
     Experimental results showing the time evolution of IPM position, IPM velocity, and EPM position along the X, Y, and Z axes under closed-loop control. The left column shows the IPM position, with mean position (solid line) and standard deviation (shaded area) around the mean, alongside goal positions (red crosses). The middle column displays IPM velocity, with mean velocity and standard deviation, and includes velocity constraints (dashed red line) in the Y-axis plot. The right column represents EPM position with mean position (solid line) and standard deviation (shaded area) around the mean, as well as position constraints in the Z-axis plot (dashed red line). This figure demonstrates the tracking accuracy and stability of both IPM and EPM under the control framework.
 </div>
 
+<iframe src="https://drive.google.com/file/d/1idN0-IWbAEmW1vUn6zzecPUowe1d8bLj/preview" width="960" height="500" allow="autoplay"></iframe>
+
 <div class="caption">
-    <iframe src="https://drive.google.com/file/d/1idN0-IWbAEmW1vUn6zzecPUowe1d8bLj/view" width="100%" height="600" style="border:none;"></iframe>
+    Video of the real-world experimental setup and results, showcasing the robotic magnetic manipulation system in action. The video demonstrates the system's ability to navigate around obstacles and reach the desired goal position while maintaining precise control over the IPM and EPM.
 </div>
-
-
-
