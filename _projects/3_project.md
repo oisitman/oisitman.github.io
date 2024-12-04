@@ -67,16 +67,59 @@ related_publications: isitman2024trajectory
 </div>
 
 
-<div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
-        {% include video.html path="assets/video/rmce.mp4" class="img-fluid rounded z-depth-1" controls=true autoplay=true  %}
+
+
+
+<div class="row justify-content-sm-center">
+    <div class="col-sm-4 mt-3 mt-md-0">
+        {% include figure.html path="assets/img/sim1.gif" title="example image" class="img-fluid rounded z-depth-1" %}
+    </div>
+    <div class="col-sm-8 mt-3 mt-md-0">
+        {% include figure.html path="assets/img/sim1.png" title="example image" class="img-fluid rounded z-depth-1" %}
     </div>
 </div>
 <div class="caption">
-    Real world experimentation of the proposed method
+    (a) Simulation Case 1 visualization. (b) Time series data of the optimal IPM trajectory. (c) IPM velocities along the trajectory. (d) Time series data of the optimal EPM trajectory. (e) Joint angles of the robotic arm. (f) Time series data of the IPM orientation. (g) Condition number (Κ) analysis of the robotic arm’s manipulability.
 </div>
 
+
+
+<div class="row justify-content-sm-center">
+    <div class="col-sm-4 mt-3 mt-md-0">
+        {% include figure.html path="assets/img/sim2.gif" title="example image" class="img-fluid rounded z-depth-1" %}
+    </div>
+    <div class="col-sm-8 mt-3 mt-md-0">
+        {% include figure.html path="assets/img/sim2.png" title="example image" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    In Case 2, the initial configuration of the robot is chosen to achieve the same IPM position and orientation but with a poorer initial condition number (5, compared to 2.7 in Case 1). The optimal trajectory is designed to improve the condition number over time while adhering to the imposed constraints on position, velocity, joint limits, and orientation. 
+</div>
+
+<div class="row justify-content-sm-center">
+    <div class="col-sm-6 mt-3 mt-md-0">
+        {% include figure.html path="assets/img/exp.png" title="example image" class="img-fluid rounded z-depth-1" %}
+    </div>
+<div class="col-sm-4 mt-3 mt-md-0">
+    <iframe src="https://oisitman.github.io/RMM_figures/fig_3d.html" width="100%" height="270" style="border:none;"></iframe>
+</div>
+<div class="caption">
+    Real-world experimental results showing repetitive IPM trajectories in 3D space under the given constraints, including obstacle avoidance (red sphere). Each colored line represents an individual trial of the IPM navigating around the obstacle, demonstrating the system's ability to consistently follow the desired path while respecting imposed constraints.
+</div>
+
+
+<div class="row">
+    <div class="col-sm mt-3 mt-md-0">
+        {% include figure.html path="assets/img/exp_res.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    Experimental results showing the time evolution of IPM position, IPM velocity, and EPM position along the X, Y, and Z axes under closed-loop control. The left column shows the IPM position, with mean position (solid line) and standard deviation (shaded area) around the mean, alongside goal positions (red crosses). The middle column displays IPM velocity, with mean velocity and standard deviation, and includes velocity constraints (dashed red line) in the Y-axis plot. The right column represents EPM position with mean position (solid line) and standard deviation (shaded area) around the mean, as well as position constraints in the Z-axis plot (dashed red line). This figure demonstrates the tracking accuracy and stability of both IPM and EPM under the control framework.
+</div>
 
 <div class="caption">
-    <iframe src="https://github.com/oisitman/RMM_figures/blob/main/fig_3d.html" width="100%" height="600" style="border:none;"></iframe>
+    <iframe src="https://drive.google.com/file/d/1idN0-IWbAEmW1vUn6zzecPUowe1d8bLj/view" width="100%" height="600" style="border:none;"></iframe>
 </div>
+
+
+
