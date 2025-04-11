@@ -1,11 +1,11 @@
 ---
 layout: page
 title: Robo-Mag-CE
-description: Trajectory Planning and Control for Robotic Magnetic Manipulation
+description: Trajectory Planning and Control for Robotic Manipulation of Magnetic Capsules
 img: assets/img/GI_EPM.png
 importance: 1
 category: Academic
-related_publications: isitman2024trajectory
+related_publications: isitman2025trajectory
 ---
 
 
