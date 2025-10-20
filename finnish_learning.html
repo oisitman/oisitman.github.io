@@ -38,6 +38,33 @@ title: Finnish Trainer
       </div>
     </header>
 
+    <button id="infoButton" class="fixed top-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white/80 text-gray-700 shadow-lg backdrop-blur hover:bg-white focus:outline-none focus:ring-2 focus:ring-gray-400" aria-haspopup="dialog" aria-controls="infoOverlay" aria-expanded="false">
+      <span class="sr-only">Show usage information</span>
+      <span class="text-lg font-semibold">i</span>
+    </button>
+
+    <div id="infoOverlay" class="hidden fixed inset-0 z-30 flex items-start justify-end bg-black/40 p-4 sm:p-8">
+      <article id="infoPanel" class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="infoPanelTitle" aria-describedby="infoPanelBody" tabindex="-1">
+        <button id="infoClose" class="absolute right-3 top-3 rounded-full bg-gray-100 px-2 py-1 text-sm text-gray-500 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300" aria-label="Close usage information">✕</button>
+        <h2 id="infoPanelTitle" class="text-xl font-semibold text-gray-900">How to use Finnish Trainer</h2>
+        <p class="mt-3 text-sm text-gray-600">Finnish Trainer keeps everything in your browser, so you can build personal decks and pick them up next time by importing what you exported.</p>
+        <div id="infoPanelBody" class="mt-4 space-y-3 text-sm text-gray-700">
+          <section>
+            <h3 class="font-semibold text-gray-900">Decks & cards</h3>
+            <p>Choose a deck from the dropdown, or tap <strong>+ Deck</strong> to start a new one. Add new words or phrases through the “Add a new card” section — include hints or mark verbs to manage conjugations.</p>
+          </section>
+          <section>
+            <h3 class="font-semibold text-gray-900">Study modules</h3>
+            <p>Switch between Flashcards, Multiple Choice, Typing, or Conjugation modes to practice in different ways. Use the direction and subset controls to tailor each session.</p>
+          </section>
+          <section>
+            <h3 class="font-semibold text-gray-900">Import & export</h3>
+            <p>Import ready-made decks with the <strong>Import</strong> button (JSON exported by this app). After studying or editing, press <strong>Export</strong> to download your updated deck for the next session or to share with friends.</p>
+          </section>
+        </div>
+      </article>
+    </div>
+
     <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Left: Decks & Add -->
       <section class="card lg:col-span-1">
@@ -322,6 +349,10 @@ title: Finnish Trainer
     const importFile = $('#importFile');
     const newDeckBtn = $('#newDeckBtn');
     const delDeckBtn = $('#delDeckBtn');
+    const infoButton = $('#infoButton');
+    const infoOverlay = $('#infoOverlay');
+    const infoPanel = $('#infoPanel');
+    const infoClose = $('#infoClose');
 
     const modeSelect = $('#modeSelect');
     const directionSelect = $('#directionSelect');
@@ -1209,6 +1240,41 @@ title: Finnish Trainer
     }
 
     // --- Events ---
+    const hideInfo = () => {
+      if (!infoOverlay || infoOverlay.classList.contains('hidden')) return;
+      infoOverlay.classList.add('hidden');
+      if (infoButton) infoButton.setAttribute('aria-expanded', 'false');
+    };
+    const showInfo = () => {
+      if (!infoOverlay || !infoOverlay.classList.contains('hidden')) return;
+      infoOverlay.classList.remove('hidden');
+      if (infoButton) infoButton.setAttribute('aria-expanded', 'true');
+      announce('Usage information opened');
+      if (infoPanel) requestAnimationFrame(() => infoPanel.focus());
+    };
+    if (infoButton && infoOverlay && infoPanel) {
+      infoButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (infoOverlay.classList.contains('hidden')) {
+          showInfo();
+        } else {
+          hideInfo();
+        }
+      });
+      infoOverlay.addEventListener('click', (e) => {
+        if (e.target === infoOverlay) hideInfo();
+      });
+      if (infoClose) infoClose.addEventListener('click', hideInfo);
+      document.addEventListener('click', (e) => {
+        if (infoOverlay.classList.contains('hidden')) return;
+        if (infoPanel.contains(e.target) || e.target === infoButton) return;
+        hideInfo();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !infoOverlay.classList.contains('hidden')) hideInfo();
+      });
+    }
+
     modeSelect.onchange = () => {
       renderStudy();
       announce(`Study mode set to ${modeSelect.options[modeSelect.selectedIndex].text}`);
