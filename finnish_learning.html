@@ -1,0 +1,1312 @@
+---
+layout: none
+permalink: /finnish-trainer/
+title: Finnish Trainer
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Finnish Trainer — Local</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .card { @apply rounded-2xl shadow-lg p-6 bg-white; }
+    .btn  { @apply rounded-2xl px-4 py-2 shadow bg-gray-900 text-white hover:opacity-90 disabled:opacity-50; }
+    .btn-ghost { @apply rounded-2xl px-3 py-2 text-gray-700 hover:bg-gray-100; }
+    .pill { @apply inline-flex items-center gap-2 text-xs font-medium rounded-full px-3 py-1 bg-gray-100; }
+    .input { @apply w-full rounded-xl border border-gray-300 px-3 py-2; }
+    .select{ @apply w-full rounded-xl border border-gray-300 px-3 py-2; }
+    .link  { @apply text-blue-700 underline; }
+    table thead th { @apply text-xs uppercase tracking-wide text-gray-500; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div id="liveRegion" class="sr-only" aria-live="polite"></div>
+  <div class="max-w-5xl mx-auto p-4 sm:p-8">
+    <header class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <div>
+        <h1 class="text-3xl font-bold">Finnish Trainer</h1>
+        <p class="text-sm text-gray-600">Study words, phrases, conjugations, and numbers. </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="exportBtn" class="btn" title="Export your data as JSON">Export</button>
+        <label class="btn cursor-pointer" title="Import a JSON deck exported by this app">
+          Import <input type="file" id="importFile" accept="application/json" class="hidden" />
+        </label>
+      </div>
+    </header>
+
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Left: Decks & Add -->
+      <section class="card lg:col-span-1">
+        <h2 class="text-xl font-semibold mb-4">Decks</h2>
+        <div class="flex items-center gap-2 mb-4">
+          <select id="deckSelect" class="select"></select>
+          <button id="newDeckBtn" class="btn-ghost" title="Create a new deck">+ Deck</button>
+          <button id="delDeckBtn" class="btn-ghost" title="Delete current deck">🗑</button>
+        </div>
+
+        <div class="space-y-2 mb-6">
+          <div class="pill">Cards in deck: <span id="cardCount" class="font-semibold">0</span></div>
+          <div class="pill">Due now: <span id="dueCount" class="font-semibold">0</span></div>
+          <div class="pill">New: <span id="newCount" class="font-semibold">0</span></div>
+          <div class="pill">Reviewing: <span id="reviewCount" class="font-semibold">0</span></div>
+          <div class="pill">Learned: <span id="learnedCount" class="font-semibold">0</span></div>
+        </div>
+
+        <details class="mb-4">
+          <summary class="font-semibold cursor-pointer">Add a new card</summary>
+          <div class="mt-3 space-y-2">
+            <input id="finnishInput" class="input" placeholder="Finnish (e.g., 'Huomenta')" />
+            <input id="englishInput" class="input" placeholder="English meaning (e.g., 'Good morning')" />
+            <input id="hintInput" class="input" placeholder="Hint / example / notes (optional)" />
+            <div class="flex flex-wrap items-center gap-2">
+              <label class="pill"><input id="isPhrase" type="checkbox" class="mr-2"> Phrase/Sentence</label>
+              <label class="pill"><input id="isVerb" type="checkbox" class="mr-2"> Verb</label>
+            </div>
+
+            <!-- Verb conjugation editor (only shown when Verb is checked) -->
+            <div id="verbEditor" class="hidden border rounded-xl p-3">
+              <div class="text-sm font-semibold mb-2">Conjugations (present tense)</div>
+              <div class="grid sm:grid-cols-2 gap-2 mb-2">
+                <div>
+                  <label class="text-xs text-gray-500">Meaning (English)</label>
+                  <input id="verbMeaningInput" class="input mt-1" placeholder="e.g., 'to be'" />
+                </div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border rounded-xl overflow-hidden">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="p-2">Persoonapronomini</th>
+                      <th class="p-2">Form</th>
+                    </tr>
+                  </thead>
+                  <tbody id="verbFormsBody"></tbody>
+                </table>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">Tip: If you leave some forms blank and the verb is supported internally (e.g., <em>olla</em>), those forms will be filled from the built‑in table in study mode.</p>
+            </div>
+
+            <button id="addCardBtn" class="btn">Add</button>
+          </div>
+        </details>
+
+        <details>
+          <summary class="font-semibold cursor-pointer">Cards in current deck</summary>
+          <div id="cardList" class="mt-3 divide-y"></div>
+        </details>
+      </section>
+
+      <!-- Center: Study -->
+      <section class="card lg:col-span-2">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 class="text-xl font-semibold">Study</h2>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="modeSelect" class="select">
+              <option value="flash">Flashcards</option>
+              <option value="mcq">Multiple choice</option>
+              <option value="type">Type the answer</option>
+              <option value="conj">Conjugation</option>
+              <option value="numbers">Numbers</option>
+            </select>
+            <select id="directionSelect" class="select" title="Prompt direction">
+              <option value="fi-en">Finnish → English</option>
+              <option value="en-fi">English → Finnish</option>
+            </select>
+            <select id="subsetSelect" class="select" title="Limit which cards appear">
+              <option value="active">Active cards</option>
+              <option value="verbs">Verbs only</option>
+              <option value="phrases">Phrases only</option>
+              <option value="new">New cards</option>
+              <option value="review">Due reviews</option>
+              <option value="suspended">Suspended only</option>
+              <option value="all">All cards (incl. suspended)</option>
+            </select>
+            <button id="shuffleBtn" class="btn-ghost">Shuffle</button>
+            <button id="suspendBtn" class="btn-ghost" title="Suspend or resume current card">Suspend</button>
+          </div>
+        </div>
+
+        <div id="studyArea" class="space-y-4">
+          <!-- Flashcards -->
+          <div id="flashCard" class="border-2 border-dashed rounded-2xl p-8 text-center hidden">
+            <div class="text-sm text-gray-500 mb-1" id="fcLabel">Finnish</div>
+            <div class="text-3xl font-bold leading-snug" id="fcPrompt">—</div>
+            <div class="mt-4 space-x-2">
+              <button id="revealBtn" class="btn">Reveal</button>
+              <button id="speakBtn" class="btn-ghost" title="Speak">🔊</button>
+            </div>
+            <div id="fcAnswerWrap" class="hidden mt-6">
+              <div class="text-sm text-gray-500 mb-1">Answer</div>
+              <div class="text-2xl" id="fcAnswer">—</div>
+              <div class="mt-2 text-gray-600" id="fcHint"></div>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button class="btn" data-grade="again">Again</button>
+                <button class="btn" data-grade="hard">Hard</button>
+                <button class="btn" data-grade="good">Good</button>
+                <button class="btn" data-grade="easy">Easy</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MCQ -->
+          <div id="mcq" class="hidden">
+            <div class="text-sm text-gray-500 mb-1" id="mcqLabel">Finnish</div>
+            <div class="text-3xl font-bold leading-snug" id="mcqPrompt">—</div>
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3" id="mcqOptions"></div>
+            <div id="mcqFeedback" class="mt-3" role="status" aria-live="polite"></div>
+          </div>
+
+          <!-- Type answer -->
+          <div id="type" class="hidden">
+            <div class="text-sm text-gray-500 mb-1" id="typeLabel">Finnish</div>
+            <div class="text-3xl font-bold leading-snug" id="typePrompt">—</div>
+            <div class="mt-4 flex gap-2">
+              <input id="typeInput" class="input" placeholder="Type your answer" />
+              <button id="typeCheckBtn" class="btn">Check👀</button>
+            </div>
+            <div id="typeFeedback" class="mt-3" role="status" aria-live="polite"></div>
+          </div>
+
+          <!-- Conjugation drill (verb from current deck) -->
+          <div id="conj" class="hidden">
+            <div class="grid sm:grid-cols-2 gap-3 mb-3">
+              <div>
+                <label class="text-sm text-gray-500">Verb (from current deck)</label>
+                <div id="conjVerbName" class="pill mt-1">—</div>
+              </div>
+              <div>
+                <label class="text-sm text-gray-500">Meaning (English)</label>
+                <input id="conjMeaning" class="input mt-1" placeholder="e.g., 'to be'" />
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border rounded-xl overflow-hidden">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="p-2">Persoonapronomini</th>
+                    <th class="p-2">Form</th>
+                    <th class="p-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="conjRows"></tbody>
+              </table>
+            </div>
+            <div class="mt-3 flex gap-2 items-center">
+              <button id="conjCheck" class="btn">Check👀</button>
+              <button id="conjReveal" class="btn-ghost">Reveal</button>
+              <div id="conjFeedback" class="text-sm text-gray-700" role="status" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <!-- Numbers drill -->
+          <div id="numbers" class="hidden">
+            <div class="grid sm:grid-cols-3 gap-3 mb-3">
+              <div>
+                <label class="text-sm text-gray-500">Mode</label>
+                <select id="numMode" class="select mt-1">
+                  <option value="digits-fi">Digits → Finnish</option>
+                  <option value="fi-digits">Finnish → Digits</option>
+                  <option value="ord-digits">Ordinal (fi → digits)</option>
+                  <option value="digits-ord">Ordinal (digits → fi)</option>
+                </select>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="text-sm text-gray-500">Range</label>
+                <select id="numRange" class="select mt-1">
+                  <option value="0-10">0–10</option>
+                  <option value="11-19">11–19</option>
+                  <option value="tens">Tens (20,30,…,90)</option>
+                  <option value="21-99">21–99</option>
+                  <option value="100-999">100–999</option>
+                  <option value="1000">1000</option>
+                  <option value="1e6">1 000 000</option>
+                  <option value="1e9">1 000 000 000</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 mb-2">
+              <div class="text-sm text-gray-500">Prompt</div>
+              <button id="numSpeak" class="btn-ghost" title="Speak">🔊</button>
+            </div>
+            <div class="text-3xl font-bold leading-snug" id="numPrompt">—</div>
+            <div class="mt-4 flex gap-2">
+              <input id="numInput" class="input" placeholder="Type your answer" />
+              <button id="numCheck" class="btn">Check👀</button>
+              <button id="numReveal" class="btn-ghost">Reveal</button>
+            </div>
+            <div id="numFeedback" class="mt-3" role="status" aria-live="polite"></div>
+          </div>
+
+          <div id="emptyState" class="hidden text-center text-gray-600 border border-dashed rounded-2xl p-6">
+            No cards match your current filters. Try switching decks or changing the subset.
+          </div>
+        </div>
+
+        <div id="progressPanel" class="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <h3 class="text-lg font-semibold">Progress</h3>
+            <div class="flex flex-wrap gap-3 text-sm">
+              <div class="pill bg-white border">Reviews today: <span id="reviewsToday" class="font-semibold">0</span></div>
+              <div class="pill bg-white border">Accuracy: <span id="accuracyToday" class="font-semibold">—</span></div>
+              <div class="pill bg-white border">Longest streak: <span id="longestStreak" class="font-semibold">0</span> days</div>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs uppercase tracking-wide text-gray-500 mb-1">Last 7 days</div>
+            <div id="progressChart" class="grid grid-cols-7 gap-2 h-24 items-end"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="mt-8 text-sm text-gray-500 flex items-center gap-2">
+      <p>🇫🇮  &copy; 2025 Ogulcan, made with ❤️</p>
+      <span id="testStatus" class="pill ml-auto"></span>
+      </div>
+
+  <script>
+    // --- Constants ---
+    const PRONOUNS = ['minä','sinä','hän/se','me','te','he/ne'];
+
+    // --- Data ---
+    const defaultDecks = () => ({
+      "User List": [
+        { fi: "Näkemiin", en: "goodbye (polite/formal)", hint: "Kiitos, näkemiin.", phrase: true },
+        { fi: "Hyvää päivänjatkoa", en: "have a nice rest of the day", hint: "Shop/office leave-taking.", phrase: true },
+        { fi: "toissapäivänä", en: "the day before yesterday", hint: "Toissapäivänä satoi.", phrase: true },
+        { fi: "eilen", en: "yesterday", hint: "Eilen oli kylmä.", phrase: true },
+        { fi: "tänään", en: "today", hint: "Tänään on tiistai.", phrase: true },
+        { fi: "huomenna", en: "tomorrow", hint: "Huomenna menen töihin.", phrase: true },
+        { fi: "ylihuomenna", en: "the day after tomorrow", hint: "Ylihuomenna on torstai.", phrase: true },
+      ]
+    });
+
+    const DB_KEY = "fi_trainer_v1";
+    const loadDB = () => {
+      try { return JSON.parse(localStorage.getItem(DB_KEY)) || { decks: defaultDecks(), stats: {} }; }
+      catch { return { decks: defaultDecks(), stats: {} }; }
+    };
+    const saveDB = () => localStorage.setItem(DB_KEY, JSON.stringify(DB));
+    let DB = loadDB();
+    ensureHistory();
+
+    // --- DOM helpers ---
+    const $ = (sel) => document.querySelector(sel);
+    const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text) n.textContent = text; return n; };
+
+    // --- Elements ---
+    const deckSelect = $('#deckSelect');
+    const cardCount = $('#cardCount');
+    const dueCount = $('#dueCount');
+    const newCount = $('#newCount');
+    const reviewCount = $('#reviewCount');
+    const learnedCount = $('#learnedCount');
+    const cardList = $('#cardList');
+
+    const addCardBtn = $('#addCardBtn');
+    const finnishInput = $('#finnishInput');
+    const englishInput = $('#englishInput');
+    const hintInput = $('#hintInput');
+    const isPhrase = $('#isPhrase');
+    const isVerb = $('#isVerb');
+
+    const verbEditor = $('#verbEditor');
+    const verbMeaningInput = $('#verbMeaningInput');
+    const verbFormsBody = $('#verbFormsBody');
+
+    const exportBtn = $('#exportBtn');
+    const importFile = $('#importFile');
+    const newDeckBtn = $('#newDeckBtn');
+    const delDeckBtn = $('#delDeckBtn');
+
+    const modeSelect = $('#modeSelect');
+    const directionSelect = $('#directionSelect');
+    const shuffleBtn = $('#shuffleBtn');
+    const subsetSelect = $('#subsetSelect');
+    const suspendBtn = $('#suspendBtn');
+
+    // Flashcard
+    const flashCard = $('#flashCard');
+    const fcLabel = $('#fcLabel');
+    const fcPrompt = $('#fcPrompt');
+    const revealBtn = $('#revealBtn');
+    const speakBtn = $('#speakBtn');
+    const fcAnswerWrap = $('#fcAnswerWrap');
+    const fcAnswer = $('#fcAnswer');
+    const fcHint = $('#fcHint');
+
+    // MCQ
+    const mcq = $('#mcq');
+    const mcqLabel = $('#mcqLabel');
+    const mcqPrompt = $('#mcqPrompt');
+    const mcqOptions = $('#mcqOptions');
+    const mcqFeedback = $('#mcqFeedback');
+
+    // Type
+    const type = $('#type');
+    const typeLabel = $('#typeLabel');
+    const typePrompt = $('#typePrompt');
+    const typeInput = $('#typeInput');
+    const typeCheckBtn = $('#typeCheckBtn');
+    const typeFeedback = $('#typeFeedback');
+
+    // Conjugation
+    const conj = $('#conj');
+    const conjVerbName = $('#conjVerbName');
+    const conjMeaning = $('#conjMeaning');
+    const conjRows = $('#conjRows');
+    const conjCheck = $('#conjCheck');
+    const conjReveal = $('#conjReveal');
+    const conjFeedback = $('#conjFeedback');
+
+    // Numbers
+    const numbers = $('#numbers');
+    const numMode = $('#numMode');
+    const numRange = $('#numRange');
+    const numPrompt = $('#numPrompt');
+    const numInput = $('#numInput');
+    const numCheck = $('#numCheck');
+    const numReveal = $('#numReveal');
+    const numFeedback = $('#numFeedback');
+    const numSpeak = $('#numSpeak');
+
+    const emptyState = $('#emptyState');
+
+    // Progress
+    const reviewsToday = $('#reviewsToday');
+    const accuracyToday = $('#accuracyToday');
+    const longestStreak = $('#longestStreak');
+    const progressChart = $('#progressChart');
+
+    const liveRegion = $('#liveRegion');
+    if (suspendBtn) suspendBtn.disabled = true;
+
+    // --- State ---
+    let currentDeckName = Object.keys(DB.decks)[0];
+    let currentOrder = [];
+    let currentIndex = 0;
+    let currentStudyCard = null;
+
+    // --- Conjugations cache (present tense) ---
+    const CONJ = {};
+    const clearConjugations = () => { Object.keys(CONJ).forEach(k => delete CONJ[k]); };
+    const registerConjugation = (fi, conj) => {
+      if (!fi || !conj || !conj.forms) return;
+      const key = fi.trim().toLowerCase();
+      const pronouns = Array.isArray(conj.pronouns) && conj.pronouns.length ? conj.pronouns : PRONOUNS;
+      const forms = { ...conj.forms };
+      CONJ[key] = {
+        meaning: conj.meaning || '',
+        pronouns,
+        forms
+      };
+    };
+    const rebuildConjugations = () => {
+      clearConjugations();
+      Object.values(DB.decks || {}).forEach(deck => {
+        (deck || []).forEach(card => {
+          if (card?.verb && card?.conj?.forms) registerConjugation(card.fi, card.conj);
+        });
+      });
+    };
+    const getBuiltInConj = (verb) => CONJ[(verb || '').trim().toLowerCase()];
+
+    // --- Numbers grammar (cardinals & ordinals) ---
+    const ONES = ['nolla','yksi','kaksi','kolme','neljä','viisi','kuusi','seitsemän','kahdeksan','yhdeksän'];
+    const TEENS = ['kymmenen','yksitoista','kaksitoista','kolmetoista','neljätoista','viisitoista','kuusitoista','seitsemäntoista','kahdeksantoista','yhdeksäntoista'];
+    const TENS = [null, null, 'kaksikymmentä','kolmekymmentä','neljäkymmentä','viisikymmentä','kuusikymmentä','seitsemänkymmentä','kahdeksankymmentä','yhdeksänkymmentä'];
+    const HUNDRED = 'sata';
+    function numberToFinnishCardinal(n){
+      if (n < 0 || n > 1e9) return String(n);
+      if (n < 10) return ONES[n];
+      if (n < 20) return TEENS[n-10];
+      if (n < 100){
+        const t = Math.floor(n/10), o = n%10;
+        return TENS[t] + (o? ONES[o] : '');
+      }
+      if (n < 1000){
+        const h = Math.floor(n/100), r = n%100;
+        const hword = h===1? HUNDRED : ONES[h].replace('yksi','yksi').replace(/$/,'') + 'sataa';
+        if (r===0) return hword;
+        return hword + numberToFinnishCardinal(r);
+      }
+      if (n === 1000) return 'tuhat';
+      if (n === 1_000_000) return 'miljoona';
+      if (n === 1_000_000_000) return 'miljardi';
+      // fallback for other large numbers (not required now)
+      return String(n);
+    }
+    const ORD_BASE = {1:'ensimmäinen',2:'toinen',3:'kolmas',4:'neljäs',5:'viides',6:'kuudes',7:'seitsemäs',8:'kahdeksas',9:'yhdeksäs',10:'kymmenes'};
+    function numberToFinnishOrdinal(n){
+      if (ORD_BASE[n]) return ORD_BASE[n];
+      if (n>10 && n<20){ // 11th-19th
+        const stem = TEENS[n-10].replace('toista','toista');
+        return stem.replace('toista','toista').replace('yksi','yhde') // crude but ok for now
+          .replace('kaksi','kahde')
+          .replace('kolme','kolman')
+          .replace('neljä','neljän')
+          .replace('viisi','viiden')
+          .replace('kuusi','kuudennen');
+      }
+      // Simple tens/compounds (approximation for day one)
+      if (n%10===0 && n>=20 && n<100){
+        const tens = numberToFinnishCardinal(n).replace('kymmentä','kymmenes');
+        return tens;
+      }
+      // 21st etc.: kahdeskymmenesensimmäinen (approx via pattern)
+      if (n>20 && n<100){
+        const tens = Math.floor(n/10)*10;
+        const ones = n%10;
+        const tensOrd = numberToFinnishOrdinal(tens);
+        const onesOrd = numberToFinnishOrdinal(ones);
+        return tensOrd + onesOrd; // e.g., kahdeskymmenes + ensimmäinen
+      }
+      // Fallback
+      return String(n);
+    }
+
+    // Normalize Finnish answers (remove spaces/hyphens, lowercase)
+    const normFi = s => (s||'').toLowerCase().replace(/[\s-]+/g,'');
+
+    // --- Speech ---
+    function speak(text) {
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'fi-FI';
+        speechSynthesis.speak(u);
+      } catch {}
+    }
+
+    // --- Deck management ---
+    function refreshDecks() {
+      rebuildConjugations();
+      deckSelect.innerHTML = '';
+      Object.keys(DB.decks).forEach(name => {
+        const opt = el('option', '', name);
+        opt.value = name; opt.selected = name === currentDeckName;
+        deckSelect.appendChild(opt);
+      });
+      refreshCounts();
+      renderCardList();
+      reshuffle();
+      renderStudy();
+      renderProgress();
+    }
+
+    function refreshCounts() {
+      const deck = DB.decks[currentDeckName] || [];
+      cardCount.textContent = deck.length;
+      const stats = DB.stats[currentDeckName] || {};
+      const now = Date.now();
+      let due = 0;
+      let newCards = 0;
+      let reviewable = 0;
+      deck.forEach((card, idx) => {
+        if (card?.suspended) return;
+        const stat = stats[idx];
+        if (!stat) newCards += 1;
+        else {
+          if (stat.due <= now) {
+            due += 1;
+            reviewable += 1;
+          } else {
+            reviewable += 1;
+          }
+        }
+      });
+      const learned = Object.values(stats).filter(v => (v?.ef || 0) > 2.4 && (v?.rep || 0) >= 3).length;
+      learnedCount.textContent = learned;
+      dueCount.textContent = due;
+      newCount.textContent = newCards;
+      reviewCount.textContent = reviewable;
+    }
+
+    function renderCardList() {
+      const deck = DB.decks[currentDeckName] || [];
+      cardList.innerHTML = '';
+      deck.forEach((c, i) => {
+        const row = el('div', 'py-2 flex items-start justify-between gap-2');
+        const left = el('div');
+        const meta = [
+          c.phrase ? 'sentence' : null,
+          c.verb ? 'verb' : null,
+          c.suspended ? 'suspended' : null
+        ].filter(Boolean);
+        left.appendChild(el('div', 'font-medium', `${c.fi}${meta.length ? ' • ' + meta.join(', ') : ''}`));
+        left.appendChild(el('div', 'text-sm text-gray-600', c.en));
+        const conjInfo = c.verb ? (c.conj?.meaning || getBuiltInConj(c.fi)?.meaning) : '';
+        if (conjInfo) left.appendChild(el('div', 'text-xs text-gray-500 italic', `Meaning: ${conjInfo}`));
+        const detail = c.example || c.hint;
+        if (detail) left.appendChild(el('div', 'text-xs text-gray-500', detail));
+        const right = el('div', 'flex items-center gap-2');
+        const speakB = el('button', 'btn-ghost', '🔊');
+        speakB.onclick = () => speak(c.fi);
+        const toggleSusp = el('button', 'btn-ghost', c.suspended ? 'Resume' : 'Suspend');
+        toggleSusp.onclick = () => {
+          c.suspended = !c.suspended;
+          saveDB();
+          announce(`Card ${c.fi} ${c.suspended ? 'suspended' : 'resumed'}`);
+          refreshCounts(); renderCardList(); reshuffle(); renderStudy();
+        };
+        const del = el('button', 'btn-ghost', '🗑');
+        del.onclick = () => {
+          DB.decks[currentDeckName].splice(i, 1);
+          // reindex stats to keep alignment after deletion
+          const old = DB.stats[currentDeckName] || {};
+          const remap = {};
+          DB.decks[currentDeckName].forEach((_, newIdx) => {
+            const oldIdx = newIdx >= i ? newIdx + 1 : newIdx;
+            if (old[oldIdx]) remap[newIdx] = old[oldIdx];
+          });
+          DB.stats[currentDeckName] = remap;
+          saveDB(); refreshDecks();
+        };
+        right.append(speakB, toggleSusp, del);
+        row.append(left, right);
+        cardList.appendChild(row);
+      });
+    }
+
+    // --- Add card form: Verb editor visibility & rows ---
+    function buildVerbEditorRows() {
+      verbFormsBody.innerHTML = '';
+      PRONOUNS.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="p-2">${p}</td><td class="p-2"><input class="input w-full" data-vform="${p}"></td>`;
+        verbFormsBody.appendChild(tr);
+      });
+    }
+    buildVerbEditorRows();
+
+    function getVerbPrefillData(fiValue) {
+      const key = (fiValue || '').trim().toLowerCase();
+      if (!key) return null;
+      const deck = DB.decks[currentDeckName] || [];
+      const fromDeck = deck.find(c => (c.fi || '').trim().toLowerCase() === key && c.conj);
+      const builtIn = getBuiltInConj(fiValue);
+      if (fromDeck?.conj) {
+        return {
+          meaning: fromDeck.conj.meaning || builtIn?.meaning || '',
+          pronouns: builtIn?.pronouns || PRONOUNS,
+          forms: { ...(builtIn?.forms || {}), ...(fromDeck.conj.forms || {}) }
+        };
+      }
+      if (builtIn) {
+        return {
+          meaning: builtIn.meaning || '',
+          pronouns: builtIn.pronouns || PRONOUNS,
+          forms: { ...(builtIn.forms || {}) }
+        };
+      }
+      return null;
+    }
+
+    function prefillVerbEditor() {
+      const data = getVerbPrefillData(finnishInput.value);
+      if (!data) return;
+      if (!verbMeaningInput.value.trim() && data.meaning) verbMeaningInput.value = data.meaning;
+      data.pronouns.forEach(p => {
+        const field = document.querySelector(`[data-vform="${p}"]`);
+        if (field && !field.value.trim() && data.forms?.[p]) field.value = data.forms[p];
+      });
+    }
+
+    isVerb.onchange = () => {
+      const show = isVerb.checked;
+      verbEditor.classList.toggle('hidden', !show);
+      if (show) prefillVerbEditor();
+    };
+
+    // --- Add card ---
+    addCardBtn.onclick = () => {
+      const fi = finnishInput.value.trim();
+      const en = englishInput.value.trim();
+      if (!fi || !en) return alert('Please fill Finnish and English');
+
+      // collect optional conjugations
+      let conjData = null;
+      if (isVerb.checked) {
+        const meaning = (verbMeaningInput.value || '').trim();
+        const forms = {};
+        PRONOUNS.forEach(p => { forms[p] = (document.querySelector(`[data-vform="${p}"]`).value || '').trim(); });
+        const anyFilled = meaning || Object.values(forms).some(v => v);
+        const builtIn = getBuiltInConj(fi);
+        if (anyFilled || !builtIn) conjData = { meaning: meaning || (builtIn?.meaning || ''), forms };
+      }
+
+      const hint = hintInput.value.trim();
+      const card = { fi, en, hint, phrase: !!isPhrase.checked, verb: !!isVerb.checked, suspended: false };
+      if (card.phrase && hint) card.example = hint;
+      if (conjData) card.conj = conjData;
+
+      DB.decks[currentDeckName] = DB.decks[currentDeckName] || [];
+      DB.decks[currentDeckName].push(card);
+      saveDB();
+
+      // reset form
+      finnishInput.value = englishInput.value = hintInput.value = '';
+      isPhrase.checked = false; isVerb.checked = false;
+      verbMeaningInput.value = '';
+      PRONOUNS.forEach(p => { const i = document.querySelector(`[data-vform="${p}"]`); if (i) i.value = ''; });
+      verbEditor.classList.add('hidden');
+
+      renderCardList(); refreshCounts(); reshuffle(); renderStudy();
+    };
+
+    // --- Deck controls ---
+    deckSelect.onchange = (e) => { currentDeckName = e.target.value; refreshDecks(); };
+    newDeckBtn.onclick = () => {
+      const raw = prompt('New deck name:');
+      const name = (raw || '').trim();
+      if (!name) return;
+      if (DB.decks[name]) return alert('Deck already exists');
+      DB.decks[name] = [];
+      currentDeckName = name; saveDB(); refreshDecks();
+    };
+    delDeckBtn.onclick = () => {
+      if (!confirm(`Delete deck "${currentDeckName}"?`)) return;
+      delete DB.decks[currentDeckName];
+      currentDeckName = Object.keys(DB.decks)[0] || 'My Deck';
+      if (!DB.decks[currentDeckName]) DB.decks[currentDeckName] = [];
+      saveDB(); refreshDecks();
+    };
+
+    // --- Import / Export ---
+    exportBtn.onclick = () => {
+      const blob = new Blob([JSON.stringify(DB, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'finnish_trainer_backup.json';
+      a.click();
+    };
+    importFile.onchange = async (e) => {
+      const file = e.target.files?.[0]; if (!file) return;
+      try {
+        const txt = await file.text();
+        const data = JSON.parse(txt);
+        if (!data.decks) throw new Error('Invalid file');
+        DB = data;
+        normalizeAllDecks();
+        saveDB();
+        refreshDecks();
+      } catch (err) { alert('Import failed: ' + err.message); }
+    };
+
+    // --- Helpers ---
+    function normalizeCard(card) {
+      if (!card) return card;
+      if (card.phrase && !card.example && card.hint) card.example = card.hint;
+      if (card.verb && card.conj && !Array.isArray(card.conj.pronouns)) card.conj.pronouns = PRONOUNS;
+      card.suspended = !!card.suspended;
+      return card;
+    }
+
+    function normalizeAllDecks() {
+      Object.values(DB.decks || {}).forEach(deck => {
+        (deck || []).forEach(normalizeCard);
+      });
+      rebuildConjugations();
+      ensureHistory();
+    }
+
+    function ensureHistory() {
+      DB.history = DB.history || {};
+      DB.history.daily = DB.history.daily || {};
+      DB.history.streak = Number.isFinite(DB.history.streak) ? DB.history.streak : 0;
+      DB.history.longestStreak = Number.isFinite(DB.history.longestStreak) ? DB.history.longestStreak : 0;
+      DB.history.lastReviewDate = DB.history.lastReviewDate || null;
+    }
+
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const dayKey = (date = new Date()) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+    const parseDay = (key) => {
+      const [y, m, d] = key.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    };
+    const diffInDays = (a, b) => Math.round((b.getTime() - a.getTime()) / DAY_MS);
+
+    function recordReview(grade) {
+      ensureHistory();
+      const today = dayKey();
+      const daily = DB.history.daily;
+      daily[today] = daily[today] || { reviews: 0, correct: 0 };
+      daily[today].reviews += 1;
+      if (grade !== 'again') daily[today].correct += 1;
+
+      if (DB.history.lastReviewDate !== today) {
+        if (!DB.history.lastReviewDate) {
+          DB.history.streak = 1;
+        } else {
+          const diff = diffInDays(parseDay(DB.history.lastReviewDate), parseDay(today));
+          DB.history.streak = diff === 1 ? DB.history.streak + 1 : 1;
+        }
+        DB.history.lastReviewDate = today;
+        if (DB.history.streak > DB.history.longestStreak) DB.history.longestStreak = DB.history.streak;
+      }
+    }
+
+    function renderProgress() {
+      if (!reviewsToday || !accuracyToday || !progressChart) return;
+      ensureHistory();
+      const daily = DB.history.daily;
+      const today = dayKey();
+      const todayStats = daily[today] || { reviews: 0, correct: 0 };
+      reviewsToday.textContent = todayStats.reviews;
+      accuracyToday.textContent = todayStats.reviews ? `${Math.round((todayStats.correct / todayStats.reviews) * 100)}%` : '—';
+      longestStreak.textContent = DB.history.longestStreak || 0;
+
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const key = dayKey(date);
+        const stats = daily[key] || { reviews: 0, correct: 0 };
+        days.push({
+          key,
+          label: date.toLocaleDateString(undefined, { weekday: 'short' }),
+          stats
+        });
+      }
+      const maxReviews = Math.max(1, ...days.map(d => d.stats.reviews));
+      progressChart.innerHTML = '';
+      days.forEach(d => {
+        const bar = document.createElement('div');
+        const portion = d.stats.reviews ? Math.max(10, Math.round((d.stats.reviews / maxReviews) * 100)) : 6;
+        bar.className = `relative w-full rounded-lg ${d.stats.reviews ? 'bg-blue-500' : 'bg-blue-100'}`;
+        bar.style.height = `${portion}%`;
+        bar.title = `${d.label}: ${d.stats.reviews} review${d.stats.reviews === 1 ? '' : 's'} (${d.stats.correct} correct)`;
+        bar.setAttribute('aria-label', `${d.label} had ${d.stats.reviews} reviews`);
+
+        const caption = document.createElement('div');
+        caption.className = 'absolute inset-x-0 top-full mt-1 text-xs text-center text-gray-500';
+        caption.textContent = d.label[0];
+        bar.appendChild(caption);
+        progressChart.appendChild(bar);
+      });
+    }
+
+    function announce(message) {
+      if (!liveRegion) return;
+      liveRegion.textContent = '';
+      requestAnimationFrame(() => { liveRegion.textContent = message; });
+    }
+
+    function speakCurrentCard() {
+      if (!currentStudyCard?.card) return;
+      speak(currentStudyCard.card.fi);
+      announce(`Speaking ${currentStudyCard.card.fi}`);
+    }
+
+    function gradeCurrentCard(grade) {
+      if (!currentStudyCard) return false;
+      DB.stats[currentDeckName] = DB.stats[currentDeckName] || {};
+      DB.stats[currentDeckName][currentStudyCard.idx] = sm2Update(DB.stats[currentDeckName][currentStudyCard.idx], grade);
+      recordReview(grade);
+      saveDB();
+      refreshCounts();
+      renderCardList();
+      renderProgress();
+      const label = { again: 'Again', hard: 'Hard', good: 'Good', easy: 'Easy' }[grade] || grade;
+      announce(`Marked card ${label}`);
+      renderStudy();
+      return true;
+    }
+
+    function toggleSuspendCurrent() {
+      if (!currentStudyCard?.card) return;
+      currentStudyCard.card.suspended = !currentStudyCard.card.suspended;
+      const state = currentStudyCard.card.suspended ? 'suspended' : 'resumed';
+      saveDB();
+      refreshCounts();
+      renderCardList();
+      reshuffle();
+      announce(`Card ${state}`);
+      renderStudy();
+    }
+
+    function cardMatchesSubset(card, idx, subset, stats, now) {
+      if (!card) return false;
+      const stat = stats[idx];
+      const suspended = !!card.suspended;
+      const dueNow = stat && stat.due <= now;
+      switch (subset) {
+        case 'verbs': return !suspended && !!card.verb;
+        case 'phrases': return !suspended && !!card.phrase;
+        case 'new': return !suspended && !stat;
+        case 'review': return !suspended && !!stat && dueNow;
+        case 'suspended': return suspended;
+        case 'all': return true;
+        case 'active':
+        default:
+          return !suspended;
+      }
+    }
+
+    function shuffleInPlace(list) {
+      for (let j = list.length - 1; j > 0; j--) {
+        const k = Math.floor(Math.random() * (j + 1));
+        [list[j], list[k]] = [list[k], list[j]];
+      }
+    }
+
+    function reshuffle() {
+      const deck = DB.decks[currentDeckName] || [];
+      const stats = DB.stats[currentDeckName] || {};
+      const now = Date.now();
+      const due = [];
+      const fresh = [];
+      const upcoming = [];
+
+      const subset = subsetSelect ? subsetSelect.value : 'active';
+
+      deck.forEach((card, idx) => {
+        if (!cardMatchesSubset(card, idx, subset, stats, now)) return;
+        if (subset === 'suspended') {
+          upcoming.push(idx);
+          return;
+        }
+        const stat = stats[idx];
+        if (!stat) fresh.push(idx);
+        else if (stat.due <= now) due.push(idx);
+        else upcoming.push(idx);
+      });
+
+      shuffleInPlace(due);
+      shuffleInPlace(fresh);
+      shuffleInPlace(upcoming);
+
+      currentOrder = [...due, ...fresh, ...upcoming];
+      currentIndex = 0;
+    }
+
+    function pickCard() {
+      const deck = DB.decks[currentDeckName] || [];
+      if (!deck.length) return null;
+      if (currentIndex >= currentOrder.length) reshuffle();
+      const idx = currentOrder[currentIndex++];
+      return { idx, card: deck[idx] };
+    }
+
+    function sm2Update(stat, grade) {
+      if (!stat) stat = { rep: 0, ef: 2.5, interval: 0, due: Date.now() };
+      const q = { again: 1, hard: 3, good: 4, easy: 5 }[grade] || 3;
+      if (q < 3) { stat.rep = 0; stat.interval = 1; }
+      else {
+        stat.rep += 1;
+        if (stat.rep === 1) stat.interval = 1;
+        else if (stat.rep === 2) stat.interval = 6;
+        else stat.interval = Math.round(stat.interval * stat.ef);
+      }
+      stat.ef = Math.max(1.3, stat.ef + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)));
+      stat.due = Date.now() + stat.interval * 24 * 60 * 60 * 1000;
+      return stat;
+    }
+
+    // --- Numbers engine ---
+    function pickNumber(range){
+      switch(range){
+        case '0-10': return Math.floor(Math.random()*11);
+        case '11-19': return 11 + Math.floor(Math.random()*9);
+        case 'tens': return 20 + 10*Math.floor(Math.random()*8); // 20..90
+        case '21-99': {
+          const t = [20,30,40,50,60,70,80,90][Math.floor(Math.random()*8)];
+          const o = 1+Math.floor(Math.random()*8); // 1..9
+          return t+o;
+        }
+        case '100-999': return 100 + Math.floor(Math.random()*900);
+        case '1000': return 1000;
+        case '1e6': return 1_000_000;
+        case '1e9': return 1_000_000_000;
+        default: return Math.floor(Math.random()*101);
+      }
+    }
+
+    function nextNumberQuestion(){
+      const mode = numMode.value;
+      const n = pickNumber(numRange.value);
+      const fi = (mode==='digits-fi'||mode==='digits-ord') ? numberToFinnishCardinal(n) : numberToFinnishCardinal(n); // same base
+      const fiOrd = numberToFinnishOrdinal(n);
+      // render prompt according to mode
+      if (mode==='digits-fi'){
+        numPrompt.textContent = String(n);
+        numInput.value=''; numFeedback.textContent='';
+        numInput.placeholder = 'Finnish (e.g., neljäkymmentäseitsemän)';
+        numCheck.onclick = () => {
+          const ok = normFi(numInput.value) === normFi(numberToFinnishCardinal(n));
+          numFeedback.innerHTML = ok ? '<div class="pill bg-green-100">Correct</div>' : `<div class="pill bg-red-100">Answer: ${numberToFinnishCardinal(n)}</div>`;
+          setTimeout(nextNumberQuestion, 3000);
+        };
+        numReveal.onclick = () => { numInput.value = numberToFinnishCardinal(n); };
+        numSpeak.onclick = () => speak(numberToFinnishCardinal(n));
+      } else if (mode==='fi-digits'){
+        numPrompt.textContent = numberToFinnishCardinal(n);
+        numInput.value=''; numFeedback.textContent='';
+        numInput.placeholder = 'Digits (e.g., 47)';
+        numCheck.onclick = () => {
+          const ok = String(Number(numInput.value.trim())) === String(n);
+          numFeedback.innerHTML = ok ? '<div class="pill bg-green-100">Correct</div>' : `<div class="pill bg-red-100">Answer: ${n}</div>`;
+          setTimeout(nextNumberQuestion, 3000);
+        };
+        numReveal.onclick = () => { numInput.value = String(n); };
+        numSpeak.onclick = () => speak(numberToFinnishCardinal(n));
+      } else if (mode==='digits-ord'){
+        numPrompt.textContent = String(n);
+        numInput.value=''; numFeedback.textContent='';
+        numInput.placeholder = 'Finnish ordinal (e.g., kahdeskymmenes)';
+        numCheck.onclick = () => {
+          const ok = normFi(numInput.value) === normFi(fiOrd);
+          numFeedback.innerHTML = ok ? '<div class="pill bg-green-100">Correct</div>' : `<div class="pill bg-red-100">Answer: ${fiOrd}</div>`;
+          setTimeout(nextNumberQuestion, 3000);
+        };
+        numReveal.onclick = () => { numInput.value = fiOrd; };
+        numSpeak.onclick = () => speak(fiOrd);
+      } else if (mode==='ord-digits'){
+        numPrompt.textContent = fiOrd;
+        numInput.value=''; numFeedback.textContent='';
+        numInput.placeholder = 'Digits (e.g., 21)';
+        numCheck.onclick = () => {
+          const val = Number(numInput.value.trim());
+          const ok = String(val) === String(n);
+          numFeedback.innerHTML = ok ? '<div class="pill bg-green-100">Correct</div>' : `<div class="pill bg-red-100">Answer: ${n}</div>`;
+          setTimeout(nextNumberQuestion, 3000);
+        };
+        numReveal.onclick = () => { numInput.value = String(n); };
+        numSpeak.onclick = () => speak(fiOrd);
+      }
+    }
+
+    // --- Main renderer ---
+    function renderStudy() {
+      const mode = modeSelect.value;
+      const dir = directionSelect.value;
+
+      currentStudyCard = null;
+      emptyState.classList.add('hidden');
+      if (suspendBtn) {
+        suspendBtn.disabled = true;
+        suspendBtn.textContent = 'Suspend';
+        suspendBtn.title = 'Suspend current card';
+      }
+
+      [flashCard, mcq, type, conj, numbers].forEach(x => x.classList.add('hidden'));
+
+      // Conjugation mode (verb picked from current deck)
+      if (mode === 'conj') {
+        conj.classList.remove('hidden');
+        const deck = DB.decks[currentDeckName] || [];
+        const candidates = deck.filter(c => c.verb && (c.conj || getBuiltInConj(c.fi)));
+        conjRows.innerHTML = '';
+        conjFeedback.textContent = '';
+
+        if (candidates.length === 0) {
+          conjVerbName.textContent = '—';
+          conjMeaning.placeholder = "Mark some cards as Verb and/or fill conjugations. Currently built-in: 'olla'.";
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td class="p-2 text-gray-600" colspan="3">No verbs with conjugations in this deck. Tick Verb when adding a card and fill forms (or use built‑in olla).</td>';
+          conjRows.appendChild(tr);
+          conjCheck.onclick = () => { conjFeedback.innerHTML = '<div class="pill bg-yellow-100">Add a verb like "olla" and mark it as Verb, or provide conjugations in the add form.</div>'; };
+          conjReveal.onclick = () => {};
+          return;
+        }
+
+        const picked = candidates[Math.floor(Math.random() * candidates.length)];
+        const v = picked.fi;
+        const builtIn = getBuiltInConj(v);
+        const data = picked.conj
+          ? { meaning: picked.conj.meaning || (builtIn?.meaning || ''), pronouns: builtIn?.pronouns || PRONOUNS, forms: { ...(builtIn?.forms || {}), ...(picked.conj.forms || {}) } }
+          : builtIn;
+
+        conjVerbName.textContent = v;
+        conjMeaning.value = '';
+        conjMeaning.placeholder = 'Type the English meaning';
+
+        if (!data) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td class="p-2 text-gray-600" colspan="3">No stored conjugations for this verb yet. Edit the card and fill the forms.</td>';
+          conjRows.appendChild(tr);
+          conjCheck.onclick = () => { conjFeedback.innerHTML = '<div class="pill bg-yellow-100">Add conjugation forms to this verb card and try again.</div>'; };
+          conjReveal.onclick = () => { conjFeedback.innerHTML = '<div class="pill bg-yellow-100">No forms to reveal.</div>'; };
+          return;
+        }
+
+        const pronouns = data.pronouns && data.pronouns.length ? data.pronouns : PRONOUNS;
+
+        // Build fresh rows
+        pronouns.forEach(p => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="p-2">${p}</td>
+            <td class="p-2"><input class="input w-full" data-pron="${p}" /></td>
+            <td class="p-2"><span class="text-xs" data-status="${p}"></span></td>
+          `;
+          conjRows.appendChild(tr);
+        });
+
+        function normalize(s){ return (s||'').trim().toLowerCase(); }
+
+        const advance = () => setTimeout(() => renderStudy(), 3000);
+
+        conjCheck.onclick = () => {
+          let allCorrect = true;
+          conjFeedback.innerHTML = '';
+
+          if (data.meaning) {
+            const okM = normalize(conjMeaning.value) === normalize(data.meaning);
+            const mStat = document.createElement('div');
+            mStat.className = 'text-xs mt-1';
+            mStat.innerHTML = okM
+              ? '<span class="pill bg-green-100">Meaning ✓</span>'
+              : `<span class="pill bg-red-100">Meaning → ${data.meaning}</span>`;
+            conjFeedback.appendChild(mStat);
+            if (!okM) allCorrect = false;
+          }
+
+          pronouns.forEach(p => {
+            const inp = conj.querySelector(`input[data-pron="${p}"]`);
+            const stat = conj.querySelector(`span[data-status="${p}"]`);
+            const expected = data.forms?.[p] || '';
+            const ok = normalize(inp.value) === normalize(expected);
+            if (ok) { stat.innerHTML = '<span class="pill bg-green-100">✓ correct</span>'; }
+            else { stat.innerHTML = `<span class="pill bg-red-100">→ ${expected || '(n/a)'}</span>`; allCorrect = false; }
+          });
+
+          conjFeedback.innerHTML += allCorrect
+            ? '<div class="pill bg-green-100 mt-2">All correct! Next in 3s…</div>'
+            : '<div class="pill bg-yellow-100 mt-2">Shown corrections. Next in 3s…</div>';
+
+          advance();
+        };
+
+        conjReveal.onclick = () => {
+          pronouns.forEach(p => {
+            const inp = conj.querySelector(`input[data-pron="${p}"]`);
+            const stat = conj.querySelector(`span[data-status="${p}"]`);
+            inp.value = data.forms?.[p] || '';
+            stat.innerHTML = '<span class="pill bg-green-100">✓</span>';
+          });
+          conjMeaning.value = data.meaning || '';
+          conjFeedback.innerHTML = '<div class="pill bg-blue-100">Filled with correct forms.</div>';
+        };
+
+        return; // end conj mode
+      }
+
+      // Numbers mode
+      if (mode === 'numbers'){
+        numbers.classList.remove('hidden');
+        nextNumberQuestion();
+        numMode.onchange = nextNumberQuestion;
+        numRange.onchange = nextNumberQuestion;
+        if (suspendBtn) suspendBtn.disabled = true;
+        return;
+      }
+
+      // Regular study modes
+      const picked = pickCard();
+      if (!picked) {
+        emptyState.classList.remove('hidden');
+        if (suspendBtn) suspendBtn.disabled = true;
+        return;
+      }
+
+      const { idx, card } = picked;
+      currentStudyCard = picked;
+      if (suspendBtn) {
+        suspendBtn.disabled = false;
+        suspendBtn.textContent = card.suspended ? 'Resume' : 'Suspend';
+        suspendBtn.title = card.suspended ? 'Resume this card' : 'Suspend this card';
+      }
+      const prompt = dir === 'fi-en' ? card.fi : card.en;
+      const answer = dir === 'fi-en' ? card.en : card.fi;
+
+      if (mode === 'flash') {
+        flashCard.classList.remove('hidden');
+        fcLabel.textContent = dir === 'fi-en' ? 'Finnish' : 'English';
+        fcPrompt.textContent = prompt;
+        fcAnswerWrap.classList.add('hidden');
+        fcAnswer.textContent = answer;
+        const detail = card.example || card.hint;
+        fcHint.textContent = detail || '';
+        revealBtn.onclick = () => {
+          fcAnswerWrap.classList.remove('hidden');
+          announce('Answer revealed');
+        };
+        speakBtn.onclick = speakCurrentCard;
+        fcAnswerWrap.querySelectorAll('button[data-grade]').forEach(b => {
+          b.onclick = () => gradeCurrentCard(b.dataset.grade);
+        });
+      }
+
+      if (mode === 'mcq') {
+        mcq.classList.remove('hidden');
+        mcqLabel.textContent = dir === 'fi-en' ? 'Finnish' : 'English';
+        mcqPrompt.textContent = prompt;
+        mcqOptions.innerHTML = '';
+        mcqFeedback.textContent = '';
+
+        const pool = DB.decks[currentDeckName]
+          .map(c => dir === 'fi-en' ? c.en : c.fi)
+          .filter(x => x && x !== answer);
+        const needed = Math.min(3, pool.length);
+        const picks = new Set();
+        while (picks.size < needed) picks.add(pool[Math.floor(Math.random() * pool.length)]);
+        const options = [answer, ...picks];
+        options.sort(() => Math.random() - 0.5);
+
+        let answered = false;
+        options.forEach(opt => {
+          const btn = el('button', 'btn w-full text-left', opt);
+          btn.onclick = () => {
+            if (answered) return;
+            answered = true;
+            const correct = opt === answer;
+            mcqFeedback.innerHTML = correct ? '<div class="pill bg-green-100">Correct!</div>' : `<div class="pill bg-red-100">Correct answer: ${answer}</div>`;
+            announce(correct ? 'Correct answer' : `Incorrect. Correct answer is ${answer}`);
+            recordReview(correct ? 'good' : 'again');
+            saveDB();
+            renderProgress();
+            setTimeout(() => renderStudy(), 600);
+          };
+          mcqOptions.appendChild(btn);
+        });
+      }
+
+      if (mode === 'type') {
+        type.classList.remove('hidden');
+        typeLabel.textContent = dir === 'fi-en' ? 'Finnish' : 'English';
+        typePrompt.textContent = prompt;
+        typeInput.value = '';
+        typeFeedback.textContent = '';
+        typeInput.focus();
+        const normalize = s => (s || '').trim().replace(/[.!?…,:;]+$/u,'').toLowerCase();
+        const show = (ok) => {
+          typeFeedback.innerHTML = ok ? '<div class="pill bg-green-100">Correct</div>' : `<div class="pill bg-red-100">Answer: ${answer}</div>`;
+          announce(ok ? 'Correct answer' : `Incorrect. Correct answer is ${answer}`);
+          // no auto-advance
+        };
+        let checked = false;
+        typeCheckBtn.onclick = () => {
+          const ok = normalize(typeInput.value) === normalize(answer);
+          show(ok);
+          if (!checked) {
+            checked = true;
+            recordReview(ok ? 'good' : 'again');
+            saveDB();
+            renderProgress();
+          }
+        };
+        typeInput.onkeydown = (e) => { if (e.key === 'Enter') typeCheckBtn.click(); };
+      }
+    }
+
+    // --- Events ---
+    modeSelect.onchange = () => {
+      renderStudy();
+      announce(`Study mode set to ${modeSelect.options[modeSelect.selectedIndex].text}`);
+    };
+    directionSelect.onchange = () => {
+      renderStudy();
+      announce(`Direction set to ${directionSelect.options[directionSelect.selectedIndex].text}`);
+    };
+    subsetSelect.onchange = () => {
+      reshuffle();
+      renderStudy();
+      announce(`Subset set to ${subsetSelect.options[subsetSelect.selectedIndex].text}`);
+    };
+    shuffleBtn.onclick = () => {
+      reshuffle();
+      renderStudy();
+      announce('Cards shuffled');
+    };
+    suspendBtn.onclick = toggleSuspendCurrent;
+
+    document.addEventListener('keydown', (e) => {
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
+      const mode = modeSelect.value;
+      if (e.key === ' ' && mode === 'flash') {
+        e.preventDefault();
+        if (fcAnswerWrap.classList.contains('hidden')) {
+          revealBtn.click();
+        } else {
+          gradeCurrentCard('good');
+        }
+      }
+      if (['1','2','3','4'].includes(e.key) && mode === 'flash') {
+        e.preventDefault();
+        const map = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
+        gradeCurrentCard(map[e.key]);
+      }
+      if (e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        speakCurrentCard();
+      }
+    });
+
+    // --- Self-tests ---
+    function runSelfTests() {
+      const status = document.getElementById('testStatus');
+      const failures = [];
+      // built-in olla test
+      const expPron = PRONOUNS;
+      const expForms = { 'minä':'olen','sinä':'olet','hän/se':'on','me':'olemme','te':'olette','he/ne':'ovat' };
+      try {
+        const checkVerb = (verb, checks, ensurePronouns = false) => {
+          const data = getBuiltInConj(verb);
+          if (!data) return;
+          if (ensurePronouns && JSON.stringify(data.pronouns) !== JSON.stringify(expPron)) {
+            failures.push(`${verb}: pronouns mismatch`);
+          }
+          Object.entries(checks).forEach(([pron, form]) => {
+            if (data.forms?.[pron] !== form) failures.push(`Form mismatch for ${verb} (${pron})`);
+          });
+        };
+        checkVerb('olla', expForms, true);
+        checkVerb('herätä', { 'minä':'herään','te':'heräätte' });
+        checkVerb('nousta', { 'sinä':'nouset','he/ne':'nousevat' });
+        checkVerb('lähteä', { 'hän/se':'lähtee','me':'lähdemme' });
+        checkVerb('opiskella', { 'minä':'opiskelen','te':'opiskelette' });
+        checkVerb('työskennellä', { 'sinä':'työskentelet','he/ne':'työskentelevät' });
+        checkVerb('levätä', { 'me':'lepäämme','te':'lepäätte' });
+        // numbers quick tests
+        if (numberToFinnishCardinal(47) !== 'neljäkymmentäseitsemän') failures.push('47 → neljäkymmentäseitsemän');
+        if (numberToFinnishCardinal(83) !== 'kahdeksankymmentäkolme') failures.push('83 → kahdeksankymmentäkolme');
+        if (numberToFinnishCardinal(100) !== 'sata') failures.push('100 → sata');
+        if (numberToFinnishCardinal(200) !== 'kaksisataa') failures.push('200 → kaksisataa');
+        if (numberToFinnishCardinal(234) !== 'kaksisataakolmekymmentäneljä') failures.push('234 → kaksisataakolmekymmentäneljä');
+        if (numberToFinnishCardinal(0) !== 'nolla') failures.push('0 → nolla');
+      } catch (e) {
+        failures.push('Exception in tests: ' + e.message);
+      }
+      if (failures.length === 0) {
+        if (status) { status.textContent = 'Self‑check: OK'; status.classList.add('bg-green-100'); }
+        console.log('[Self-test] All good');
+      } else {
+        if (status) { status.textContent = 'Self‑check: ' + failures.length + ' issue(s)'; status.classList.add('bg-yellow-100'); }
+        console.warn('[Self-test] Failures:', failures);
+      }
+    }
+
+    // --- Init ---
+    function buildVerbEditorDefaults(){
+      const maybePrefill = () => { if (isVerb.checked) prefillVerbEditor(); };
+      finnishInput.addEventListener('change', maybePrefill);
+      finnishInput.addEventListener('blur', maybePrefill);
+    }
+    buildVerbEditorRows();
+    buildVerbEditorDefaults();
+    normalizeAllDecks();
+    refreshDecks();
+    runSelfTests();
+  </script>
+</body>
+</html>
