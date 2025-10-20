@@ -10,4 +10,6 @@ children:
     - title: divider
     - title: Repositories
       permalink: /repositories/
+    - title: Finnish Trainer
+      permalink: /finnish-trainer/
 ---
