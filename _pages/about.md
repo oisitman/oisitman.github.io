@@ -21,3 +21,5 @@ Hey there! 👋
 My research interests lie in robotic manipulation, magnetic navigation systems, control systems, and healthcare robotics. During my Ph.D. at Aalto University, I worked with the Intelligent Robotics research group led by Prof. Ville Kyrki and the Robotics Instruments group led by Prof. Quan Zhou. My work focused on developing robotic systems and autonomous solutions for medical applications.
 
 I enjoy building intelligent systems that can address real world challenges. I have hands on experience with Python, Matlab/Simulink, and C++, and I am passionate about advancing robotics technologies that can create meaningful impact in healthcare.
+
+I’m thrilled to share my projects and contributions with you here on my portfolio. Feel free to reach out.
