@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "PhD Complete &#127881;"
+title: "PhD Completed &#127881;"
 date: 2026-05-21
 inline: false
 related_posts: false
