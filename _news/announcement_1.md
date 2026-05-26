@@ -38,7 +38,7 @@ We are grateful for the opportunity to share our work with the global robotics c
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include video.html path="assets/video/ICRA22.mp4" class="img-fluid rounded z-depth-1" controls=true autoplay=false poster="/assets/img/icra22.png"  %}
+        {% include video.html path="assets/video/conference.mp4" class="img-fluid rounded z-depth-1" controls=true autoplay=false poster="/assets/img/icra22.png"  %}
     </div>
 </div>
 
